@@ -1,0 +1,4 @@
+voluptuous>=0.13.1
+mutagen>=1.47.0
+pytest
+pytest-homeassistant-custom-component

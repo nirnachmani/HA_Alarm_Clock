@@ -1,0 +1,707 @@
+set_alarm:
+  name: Set Alarm
+  description: Set an alarm with specified parameters.
+  target:
+    entity:
+      domain: media_player
+  fields:
+    time:
+      name: Time
+      description: Time for the alarm (leave blank to reuse last alarm time)
+      required: false
+      selector:
+        time: {}
+    name:
+      name: Name
+      description: Optional name for the alarm (can include spaces)
+      example: "Morning Wake Up"
+      required: false
+      selector:
+        text:
+          multiline: false
+    date:
+      name: Date
+      description: Optional date for the alarm (defaults to today)
+      required: false
+      selector:
+        date: {}
+    message:
+      name: Message
+      description: Optional message to announce
+      example: "Time to wake up!"
+      selector:
+        text:
+          multiline: false
+    repeat:
+      description: How to repeat the alarm
+      default: "once"
+      selector:
+        select:
+          options:
+            - "once"
+            - "daily"
+            - "weekdays"
+            - "weekends"
+            - "custom"
+    repeat_days:
+      name: Custom Repeat Days
+      description: Days to repeat on if repeat mode is custom
+      selector:
+        select:
+          multiple: true
+          options:
+            - "mon"
+            - "tue"
+            - "wed"
+            - "thu"
+            - "fri"
+            - "sat"
+            - "sun"
+    sound_media:
+      name: Sound Media
+      description: Media to play when the alarm rings. Uses the Home Assistant media browser.
+      required: false
+      selector:
+        media: {}
+      context:
+        filter_entity: entity_id
+    spotify_source:
+      name: Spotify Source
+      description: >-
+        Optional Spotify Connect source to select before playback. Required when using a Spotify media player,
+        and must match one of the player's available sources.
+      required: false
+      selector:
+        text: {}
+    announce_time:
+      name: Announce Time
+      description: Include the current time in the announcement
+      required: false
+      default: true
+      selector:
+        boolean: {}
+    announce_name:
+      name: Announce Name
+      description: Include the alarm name in the announcement when provided
+      required: false
+      default: true
+      selector:
+        boolean: {}
+    notify_device:
+      name: Notify Device
+      description: >-
+        Mobile app device ID (e.g., mobile_app_sm_a528b). 
+        You can find your device ID in Mobile App integration notification services.
+        Do not include 'notify.' prefix.
+      required: false
+      example: "mobile_app_sm_a528b"
+      selector:
+        text:
+          multiline: false
+    activation_entity:
+      name: Activation Entity
+      description: Entity to turn on when the alarm fires
+      required: false
+      selector:
+        entity: {}
+
+set_reminder:
+  name: Set Reminder
+  description: Set a reminder with specified parameters.
+  target:
+    entity:
+      domain: media_player
+  fields:
+    time:
+      name: Time
+      description: Time for the reminder (leave blank to use the current time)
+      required: false
+      selector:
+        time: {}
+    name:
+      name: Name
+      description: Name for the reminder (required, can include spaces)
+      example: "Take Medication"
+      required: true
+      selector:
+        text:
+          multiline: false
+    date:
+      name: Date
+      description: Optional date for the reminder (defaults to today)
+      required: false
+      selector:
+        date: {}
+    message:
+      name: Message
+      description: Optional message to announce
+      example: "Take medication"
+      selector:
+        text: {}
+    repeat:
+      name: Repeat
+      description: How to repeat the reminder
+      default: "once"
+      selector:
+        select:
+          options:
+            - "once"
+            - "daily"
+            - "weekdays"
+            - "weekends"
+            - "custom"
+    repeat_days:
+      name: Custom Repeat Days
+      description: Days to repeat on if repeat mode is custom
+      selector:
+        select:
+          multiple: true
+          options:
+            - "mon"
+            - "tue"
+            - "wed"
+            - "thu"
+            - "fri"
+            - "sat"
+            - "sun"
+    sound_media:
+      name: Sound Media
+      description: Media to play when the reminder fires. Uses the Home Assistant media browser.
+      required: false
+      selector:
+        media: {}
+      context:
+        filter_entity: entity_id
+    announce_time:
+      name: Announce Time
+      description: Include the current time in the announcement
+      required: false
+      default: true
+      selector:
+        boolean: {}
+    notify_device:
+      name: Notify Device
+      description: >-
+        Mobile app device ID (e.g., mobile_app_sm_a528b). 
+        You can find your device ID in Mobile App integration notification services.
+        Do not include 'notify.' prefix.
+      required: false
+      example: "mobile_app_sm_a528b"
+      selector:
+        text:
+          multiline: false
+    activation_entity:
+      name: Activation Entity
+      description: Entity to turn on when the alarm fires
+      required: false
+      selector:
+        entity: {}
+
+
+stop_alarm:
+  name: Stop Alarm
+  description: Stop an active alarm
+  fields:
+    alarm_id:
+      name: Alarm
+      description: Select the alarm to stop
+      required: true
+      selector:
+        entity:
+          domain: ha_alarm_clock_alarm
+
+snooze_alarm:
+  name: Snooze Alarm
+  description: Snooze a ringing alarm
+  fields:
+    minutes:
+      name: Minutes
+      description: Number of minutes to snooze
+      default: 5
+      required: false
+      selector:
+        number:
+          min: 5
+          max: 60
+          unit_of_measurement: minutes
+    alarm_id:
+      name: Alarm
+      description: The alarm to snooze
+      required: true
+      selector:
+        entity:
+          domain: ha_alarm_clock_alarm
+
+stop_reminder:
+  name: Stop Reminder
+  description: Stop an active reminder
+  fields:
+    reminder_id:
+      name: Reminder
+      description: Select the reminder to stop
+      required: true
+      selector:
+        entity:
+          domain: ha_alarm_clock_reminder
+
+snooze_reminder:
+  name: Snooze Reminder
+  description: Snooze a ringing reminder
+  fields:
+    minutes:
+      name: Minutes
+      description: Number of minutes to snooze
+      default: 5
+      required: false
+      selector:
+        number:
+          min: 5
+          max: 60
+          unit_of_measurement: minutes
+    reminder_id:
+      name: Reminder
+      description: The reminder to snooze
+      required: true
+      selector:
+        entity:
+          domain: ha_alarm_clock_reminder
+
+stop:
+  name: Stop
+  description: Stop an active alarm or reminder
+  target:
+    entity:
+      domain:
+        - ha_alarm_clock_alarm
+        - ha_alarm_clock_reminder
+
+snooze:
+  name: Snooze
+  description: Snooze an active alarm or reminder
+  target:
+    entity:
+      domain:
+        - ha_alarm_clock_alarm
+        - ha_alarm_clock_reminder
+  fields:
+    minutes:
+      name: Minutes
+      description: Number of minutes to snooze
+      default: 5
+      selector:
+        number:
+          min: 1
+          max: 60
+          step: 1
+
+delete:
+  name: Delete
+  description: Delete an alarm or reminder
+  target:
+    entity:
+      domain:
+        - ha_alarm_clock_alarm
+        - ha_alarm_clock_reminder
+
+stop_all_alarms:
+  name: Stop All Alarms
+  description: Stop all active alarms
+  fields: {}
+
+stop_all_reminders:
+  name: Stop All Reminders
+  description: Stop all active reminders
+  fields: {}
+
+stop_all:
+  name: Stop All
+  description: Stop all active HA Alarm Clock alarms and reminders
+  fields: {}
+
+edit_alarm:
+  name: Edit Alarm
+  description: Edit an existing alarm's settings
+  target:
+    entity:
+      domain: media_player
+  fields:
+    alarm_id:
+      name: Alarm
+      description: Select the alarm to edit
+      required: true
+      selector:
+        entity:
+          domain: ha_alarm_clock_alarm
+    time:
+      name: Time
+      description: New time for the alarm (HH:MM format)
+      required: false
+      example: "07:30"
+      selector:
+        time: {}
+    date:
+      name: Date
+      description: New date for the alarm
+      required: false
+      selector:
+        date: {}
+    name:
+      name: Name
+      description: New name for the alarm
+      required: false
+      selector:
+        text: {}
+    message:
+      name: Message
+      description: New message for the alarm
+      required: false
+      selector:
+        text: {}
+    sound_media:
+      name: Sound Media
+      description: Media to play when the alarm rings. Uses the Home Assistant media browser.
+      required: false
+      selector:
+        media: {}
+      context:
+        filter_entity: entity_id
+    spotify_source:
+      name: Spotify Source
+      description: Spotify Connect source name to use when the alarm plays on a Spotify media player.
+      required: false
+      selector:
+        text: {}
+    repeat:
+      name: Repeat
+      description: How to repeat the alarm
+      required: false
+      selector:
+        select:
+          options:
+            - "once"
+            - "daily"
+            - "weekdays"
+            - "weekends"
+            - "custom"
+    repeat_days:
+      name: Custom Repeat Days
+      description: Days to repeat on if repeat mode is custom
+      required: false
+      selector:
+        select:
+          multiple: true
+          options:
+            - "mon"
+            - "tue"
+            - "wed"
+            - "thu"
+            - "fri"
+            - "sat"
+            - "sun"
+    announce_time:
+      name: Announce Time
+      description: Include the current time in the announcement
+      required: false
+      selector:
+        boolean: {}
+    activation_entity:
+      name: Activation Entity
+      description: Entity to turn on when the alarm fires
+      required: false
+      selector:
+        entity: {}
+
+
+edit_reminder:
+  name: Edit Reminder
+  description: Edit an existing reminder's settings
+  target:
+    entity:
+      domain: media_player
+  fields:
+    reminder_id:
+      name: Reminder
+      description: Select the reminder to edit
+      required: true
+      selector:
+        entity:
+          domain: ha_alarm_clock_reminder
+    time:
+      name: Time
+      description: New time for the reminder (HH:MM format)
+      required: false
+      example: "07:30"
+      selector:
+        time: {}
+    date:
+      name: Date
+      description: New date for the reminder
+      required: false
+      selector:
+        date: {}
+    name:
+      name: Name
+      description: New name for the reminder
+      required: false
+      selector:
+        text: {}
+    message:
+      name: Message
+      description: New message for the reminder
+      required: false
+      selector:
+        text: {}
+    sound_media:
+      name: Sound Media
+      description: Media to play when the reminder fires. Uses the Home Assistant media browser.
+      required: false
+      selector:
+        media: {}
+      context:
+        filter_entity: entity_id
+    repeat:
+      name: Repeat
+      description: How to repeat the reminder
+      required: false
+      selector:
+        select:
+          options:
+            - "once"
+            - "daily"
+            - "weekdays"
+            - "weekends"
+            - "custom"
+    repeat_days:
+      name: Custom Repeat Days
+      description: Days to repeat on if repeat mode is custom
+      required: false
+      selector:
+        select:
+          multiple: true
+          options:
+            - "mon"
+            - "tue"
+            - "wed"
+            - "thu"
+            - "fri"
+            - "sat"
+            - "sun"
+    announce_time:
+      name: Announce Time
+      description: Include the current time in the announcement
+      required: false
+      selector:
+        boolean: {}
+    announce_name:
+      name: Announce Name
+      description: Include the alarm name in the announcement when provided
+      required: false
+      selector:
+        boolean: {}
+    activation_entity:
+      name: Activation Entity
+      description: Entity to turn on when the alarm fires
+      required: false
+      selector:
+        entity: {}
+
+delete_alarm:
+  name: Delete Alarm
+  description: Delete a specific alarm
+  fields:
+    alarm_id:
+      name: Alarm ID
+      description: The ID of the alarm to delete
+      required: true
+      selector:
+        entity:
+          domain: ha_alarm_clock_alarm
+
+delete_reminder:
+  name: Delete Reminder
+  description: Delete a specific reminder
+  fields:
+    reminder_id:
+      name: Reminder ID
+      description: The ID of the reminder to delete
+      required: true
+      selector:
+        entity:
+          domain: ha_alarm_clock_reminder
+
+delete_all_alarms:
+  name: Delete All Alarms
+  description: Delete all alarms
+  fields: {}
+
+delete_all_reminders:
+  name: Delete All Reminders
+  description: Delete all reminders
+  fields: {}
+
+delete_all:
+  name: Delete All
+  description: Delete all HA Alarm Clock alarms and reminders
+  fields: {}
+
+reschedule_alarm:
+  name: Reschedule Alarm
+  description: Reschedule a stopped or completed alarm
+  target:
+    entity:
+      domain: media_player
+  fields:
+    alarm_id:
+      name: Alarm
+      description: The alarm to reschedule
+      required: true
+      selector:
+        entity:
+          domain: ha_alarm_clock_alarm
+    time:
+      name: Time
+      description: New time for the alarm (optional)
+      required: false
+      selector:
+        time: {}
+    date:
+      name: Date
+      description: New date for the alarm (optional)
+      required: false
+      selector:
+        date: {}
+    message:
+      name: Message
+      description: New message (optional)
+      required: false
+      selector:
+        text: {}
+    sound_media:
+      name: Sound Media
+      description: Media to play when the alarm rings. Uses the Home Assistant media browser.
+      required: false
+      selector:
+        media: {}
+      context:
+        filter_entity: entity_id
+    repeat:
+      name: Repeat
+      description: How to repeat the alarm
+      required: false
+      selector:
+        select:
+          options:
+            - "once"
+            - "daily"
+            - "weekdays"
+            - "weekends"
+            - "custom"
+    repeat_days:
+      name: Custom Repeat Days
+      description: Days to repeat on if repeat mode is custom
+      required: false
+      selector:
+        select:
+          multiple: true
+          options:
+            - "mon"
+            - "tue"
+            - "wed"
+            - "thu"
+            - "fri"
+            - "sat"
+            - "sun"
+    announce_time:
+      name: Announce Time
+      description: Include the current time in the announcement
+      required: false
+      selector:
+        boolean: {}
+    activation_entity:
+      name: Activation Entity
+      description: Entity to turn on when the alarm fires
+      required: false
+      selector:
+        entity: {}
+
+
+reschedule_reminder:
+  name: Reschedule Reminder
+  description: Reschedule a stopped or completed reminder
+  target:
+    entity:
+      domain: media_player
+  fields:
+    reminder_id:
+      name: Reminder
+      description: The reminder to reschedule
+      required: true
+      selector:
+        entity:
+          domain: ha_alarm_clock_reminder
+    time:
+      name: Time
+      description: New time for the reminder (optional)
+      required: false
+      selector:
+        time: {}
+    date:
+      name: Date
+      description: New date for the reminder (optional)
+      required: false
+      selector:
+        date: {}
+    message:
+      name: Message
+      description: New message (optional)
+      required: false
+      selector:
+        text: {}
+    sound_media:
+      name: Sound Media
+      description: Media to play when the reminder fires. Uses the Home Assistant media browser.
+      required: false
+      selector:
+        media: {}
+      context:
+        filter_entity: entity_id
+    repeat:
+      name: Repeat
+      description: How to repeat the reminder
+      required: false
+      selector:
+        select:
+          options:
+            - "once"
+            - "daily"
+            - "weekdays"
+            - "weekends"
+            - "custom"
+    repeat_days:
+      name: Custom Repeat Days
+      description: Days to repeat on if repeat mode is custom
+      required: false
+      selector:
+        select:
+          multiple: true
+          options:
+            - "mon"
+            - "tue"
+            - "wed"
+            - "thu"
+            - "fri"
+            - "sat"
+            - "sun"
+    announce_time:
+      name: Announce Time
+      description: Include the current time in the announcement
+      required: false
+      selector:
+        boolean: {}
+    activation_entity:
+      name: Activation Entity
+      description: Entity to turn on when the alarm fires
+      required: false
+      selector:
+        entity: {}
+
