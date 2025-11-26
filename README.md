@@ -1,6 +1,6 @@
 # HA Alarm Clock
 
-A centralised alarm clock and reminder integration for Home Assistant which plays alarms and reminders on media players with HA Media Browser support for selecting playback and companion cards. It builds on [HA-Alarms-and-Reminders][upstream] (thank you!), with changes by vibe coding.
+A centralised alarm clock and reminder integration for Home Assistant which plays alarms and reminders on media players with HA Media Browser support for selecting playback and companion cards. It builds on [HA-Alarms-and-Reminders][upstream] (thank you!), with changes via vibe coding.
 
 ## Overview
 
@@ -85,3 +85,4 @@ Reproduce the issue, then collect `home-assistant.log`.
 Based on [HA-Alarms-and-Reminders][upstream] by @omaramin-2000 and modified by vibe coding .
 
 [upstream]: https://github.com/omaramin-2000/HA-Alarms-and-Reminders
+
