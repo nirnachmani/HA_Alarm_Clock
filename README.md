@@ -68,7 +68,7 @@ All options are optional
 
 ## Debugging
 
-Enable debug logging via `configuration.yaml`:
+If you find a bug, please enable debug logging via `configuration.yaml`:
 
 ```yaml
 logger:
@@ -76,7 +76,7 @@ logger:
     custom_components.ha_alarm_clock: debug
 ```
 
-Reproduce the issue, then collect `home-assistant.log`.
+Reproduce the issue, collect `home-assistant.log` and raise an issue. I will try to look into issues although my time is limited and it may take me some time. 
 
 
 ## Attribution
@@ -84,3 +84,4 @@ Reproduce the issue, then collect `home-assistant.log`.
 Based on [HA-Alarms-and-Reminders][upstream] by @omaramin-2000 and modified by vibe coding .
 
 [upstream]: https://github.com/omaramin-2000/HA-Alarms-and-Reminders
+
