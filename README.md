@@ -7,7 +7,7 @@ A centralised alarm clock and reminder integration for Home Assistant which play
 - Alarms and reminders repeat in a loop until stopped; stopping playback on the target player (“Hey Google, stop” or pressing the hardware button/satellite control) stops the alarm to imitate a traditional alarm clock feel (in addition to the ability to stop alarm and reminders via service calls, voice and companion cards).
 - Playback sequence is configurable per-item: loop announce time → announce name → announce message → media playback; all announcements are optional
 - HA Media Browser support for media file selection, supports multiple sources: local media, Music Assistant, DLNA, SpotifyPlus, Plex, Jellyfin, Radio Browser
-- Pair it with the [Noise Generator](https://github.com/nirnachmani/noise-generator) for more traditional alarm playback.
+- Pair it with the [Noise Generator](https://github.com/nirnachmani/noise-generator) for more traditional alarm sounds.
 - Tested media players include Google Cast devices, Home Assistant Voice preview, Music Assistant media players, Spotify media players, and SpotifyPlus players; others may behave differently, especially around looping and stop detection.
 - Entities (alarm/reminder and a switch) per item plus a dashboard sensor that exposes the entire schedule for automations.
 - Services exist for creating, editing, rescheduling, snoozing, stopping, deleting, and stop-all actions, along with metadata helpers for the UI and HA Assist/LLM intents for voice/AI control.
@@ -89,6 +89,7 @@ Reproduce the issue, collect `home-assistant.log` and raise an issue. I will try
 Based on [HA-Alarms-and-Reminders][upstream] by @omaramin-2000 and modified by vibe coding .
 
 [upstream]: https://github.com/omaramin-2000/HA-Alarms-and-Reminders
+
 
 
 
