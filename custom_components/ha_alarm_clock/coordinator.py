@@ -38,6 +38,7 @@ from .const import (
     REMINDER_ENTITY_DOMAIN,
     DASHBOARD_ENTITY_ID,
     ATTR_SPOTIFY_SOURCE,
+    ATTR_VOLUME,
     SPOTIFY_PLATFORMS,
 )
 
@@ -178,6 +179,8 @@ class _PlaybackSession:
             spotify_source=item.get(ATTR_SPOTIFY_SOURCE),
             stop_event=self.stop_event,
             register_context=self._register_service_context,
+            item_id=self.item_id,
+            volume=item.get(ATTR_VOLUME),
         )
 
     def _resolve_target(self, item: Dict[str, Any]) -> str | None:
@@ -2536,6 +2539,23 @@ class AlarmAndReminderCoordinator:
 
         return entity_id
 
+    def _normalize_volume_override(self, value: Any) -> float | None:
+        """Normalize optional volume override to 0.0-1.0 range."""
+        if value in (None, "", False):
+            return None
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            _LOGGER.debug("Ignoring invalid volume override %s", value)
+            return None
+        if number < 0:
+            number = 0.0
+        if number <= 1.0:
+            return number
+        if number <= 100.0:
+            return min(1.0, number / 100.0)
+        return 1.0
+
     def _normalize_item_fields(self, item: Dict[str, Any]) -> Dict[str, Any]:
         """Normalize internal representation of an alarm/reminder item."""
         normalized = dict(item)
@@ -2669,6 +2689,12 @@ class AlarmAndReminderCoordinator:
             normalized[ATTR_SPOTIFY_SOURCE] = spotify_source
         else:
             normalized.pop(ATTR_SPOTIFY_SOURCE, None)
+
+        volume_override = self._normalize_volume_override(normalized.get(ATTR_VOLUME))
+        if volume_override is not None:
+            normalized[ATTR_VOLUME] = volume_override
+        else:
+            normalized.pop(ATTR_VOLUME, None)
 
         normalized["activation_entity"] = self._normalize_activation_entity(
             normalized.get("activation_entity"),
@@ -2820,6 +2846,11 @@ class AlarmAndReminderCoordinator:
             data[ATTR_SPOTIFY_SOURCE] = spotify_source
         else:
             data.pop(ATTR_SPOTIFY_SOURCE, None)
+        volume_override = self._normalize_volume_override(data.get(ATTR_VOLUME))
+        if volume_override is not None:
+            data[ATTR_VOLUME] = volume_override
+        else:
+            data.pop(ATTR_VOLUME, None)
         return data
 
     def _build_announcement_text(self, item: Dict[str, Any]) -> Optional[str]:
@@ -3262,6 +3293,7 @@ class AlarmAndReminderCoordinator:
                 enforce_allowed=True,
                 item_name=item_id,
             )
+            volume_override = self._normalize_volume_override(call.data.get(ATTR_VOLUME))
 
             item = {
                 "scheduled_time": scheduled_time,
@@ -3286,6 +3318,8 @@ class AlarmAndReminderCoordinator:
 
             if spotify_source_value:
                 item[ATTR_SPOTIFY_SOURCE] = spotify_source_value
+            if volume_override is not None:
+                item[ATTR_VOLUME] = volume_override
 
             # Save and put into memory
             normalized = self._normalize_item_fields(item)
@@ -3661,6 +3695,7 @@ class AlarmAndReminderCoordinator:
 
             original_status = item.get("status", "scheduled")
             was_active = original_status == "active"
+            media_player_for_restore = self._normalize_media_player(item.get("media_player"))
 
             self._cancel_scheduled_trigger(item_id)
 
@@ -3684,6 +3719,17 @@ class AlarmAndReminderCoordinator:
                 await self._stop_transport(item, session, was_active=was_active, reason=reason, is_alarm=is_alarm)
             except Exception:
                 _LOGGER.exception("Failed to stop transports for %s", item_id)
+
+            if media_player_for_restore:
+                try:
+                    register_ctx = session._register_service_context if session else None
+                    await self.media_handler.restore_player_volume(
+                        item_id,
+                        media_player_for_restore,
+                        register_context=register_ctx,
+                    )
+                except Exception:  # noqa: BLE001
+                    _LOGGER.exception("Failed to restore volume for %s", media_player_for_restore)
 
             # Update item status and decide whether to reschedule for repeating items
             now_dt = dt_util.now()
@@ -4037,6 +4083,13 @@ class AlarmAndReminderCoordinator:
                     item_name=found_id,
                 )
 
+            if ATTR_VOLUME in changes:
+                volume_override = self._normalize_volume_override(changes.pop(ATTR_VOLUME))
+                if volume_override is not None:
+                    item[ATTR_VOLUME] = volume_override
+                else:
+                    item.pop(ATTR_VOLUME, None)
+
             incoming_name = changes.get("name", None)
             if incoming_name is not None:
                 slug = self._slugify_name(incoming_name)
@@ -4333,6 +4386,13 @@ class AlarmAndReminderCoordinator:
                     enforce_allowed=True,
                     item_name=item_id,
                 )
+
+            if ATTR_VOLUME in changes:
+                volume_override = self._normalize_volume_override(changes.pop(ATTR_VOLUME))
+                if volume_override is not None:
+                    item[ATTR_VOLUME] = volume_override
+                else:
+                    item.pop(ATTR_VOLUME, None)
 
             if "sound_media" in changes or "sound_file" in changes:
                 raw_sound = changes.get("sound_media") if "sound_media" in changes else changes.get("sound_file")

@@ -33,6 +33,7 @@ ATTR_NAME = "name"             # Attribute name
 ATTR_NOTIFY_DEVICE = "notify_device"
 ATTR_NOTIFY_TITLE = "HA Alarm Clock"
 ATTR_SPOTIFY_SOURCE = "spotify_source"
+ATTR_VOLUME = "volume"
 
 # Configuration
 CONF_ALARM_SOUND = "alarm_sound"

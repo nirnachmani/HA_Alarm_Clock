@@ -134,6 +134,7 @@ class MediaHandler:
         self._logged_missing_tts = False
         self._player_profile_resolver: Callable[[Optional[str]], Dict[str, Any]] | None = None
         self._local_profile_cache: Dict[str, Dict[str, Any]] = {}
+        self._player_volume_stack: Dict[str, list[Dict[str, Any]]] = {}
 
     def set_media_player_profile_resolver(
         self, resolver: Callable[[Optional[str]], Dict[str, Any]]
@@ -364,23 +365,54 @@ class MediaHandler:
         spotify_source: str | None = None,
         stop_event: asyncio.Event | None = None,
         register_context: Callable[[Context, str], None] | None = None,
+        *,
+        item_id: str | None = None,
+        volume: float | None = None,
     ) -> None:
         """Play TTS and sound on media player."""
         playback_monitor: _PlaybackWatcher | None = None
         media_monitor: _PlaybackWatcher | None = None
         try:
-            # Always reset the player so TTS starts from a clean state.
-            await self.stop_media_player(media_player, register_context)
+            if 'player_profile' not in locals():
+                player_profile = self._get_media_player_profile(media_player)
+                player_family = player_profile.get("family", "home_assistant")
+                is_spotify_player = player_family == "spotify"
+            should_pre_stop = player_family not in {"spotify", "music_assistant"}
+            if should_pre_stop:
+                await self.stop_media_player(media_player, register_context)
             _LOGGER.debug(
                 "MediaHandler: starting TTS on %s with message=%r (is_alarm=%s)",
                 media_player,
                 message,
                 is_alarm,
             )
-
-            player_profile = self._get_media_player_profile(media_player)
-            player_family = player_profile.get("family", "home_assistant")
-            is_spotify_player = player_family == "spotify"
+            announce_volume_override: int | None = None
+            normalized_volume_override: float | None = None
+            pending_spotify_volume: float | None = None
+            if volume is not None:
+                try:
+                    normalized_volume_override = max(0.0, min(1.0, float(volume)))
+                except (TypeError, ValueError):
+                    normalized_volume_override = None
+            if normalized_volume_override is not None and item_id:
+                if player_family == "music_assistant":
+                    announce_volume_override = await self._async_apply_volume_override(
+                        item_id,
+                        media_player,
+                        normalized_volume_override,
+                        player_profile,
+                        register_context,
+                    )
+                elif is_spotify_player:
+                    pending_spotify_volume = normalized_volume_override
+                else:
+                    await self._async_apply_volume_override(
+                        item_id,
+                        media_player,
+                        normalized_volume_override,
+                        player_profile,
+                        register_context,
+                    )
 
             tts_context: Context | None = None
             monitor_state: str | None = None
@@ -416,6 +448,7 @@ class MediaHandler:
                         tts_context,
                         stop_event,
                         player_profile,
+                        announce_volume_override=announce_volume_override,
                     )
                     if not attempted_tts:
                         _LOGGER.debug(
@@ -498,7 +531,8 @@ class MediaHandler:
                 )
 
             # Ensure the player is idle before starting looped media even if TTS left it paused.
-            await self.stop_media_player(media_player, register_context)
+            if player_family not in {"spotify", "music_assistant"}:
+                await self.stop_media_player(media_player, register_context)
 
             if is_spotify_player:
                 if not spotify_source:
@@ -513,6 +547,14 @@ class MediaHandler:
                         spotify_source,
                         register_context,
                     )
+                    if pending_spotify_volume is not None and item_id:
+                        await self._async_apply_volume_override(
+                            item_id,
+                            media_player,
+                            pending_spotify_volume,
+                            player_profile,
+                            register_context,
+                        )
                 except Exception:
                     return
 
@@ -716,6 +758,7 @@ class MediaHandler:
         context: Context,
         stop_event: asyncio.Event | None,
         player_profile: Dict[str, Any],
+        announce_volume_override: int | None = None,
     ) -> bool:
         """Prefer the Music Assistant announcement service for MA players."""
         if stop_event and stop_event.is_set():
@@ -734,12 +777,15 @@ class MediaHandler:
             "use_pre_announce": False,
         }
 
-        announce_volume = await self._async_determine_mass_announce_volume(
-            media_player,
-            player_profile,
-        )
-        if announce_volume is not None:
-            payload["announce_volume"] = announce_volume
+        if announce_volume_override is not None:
+            payload["announce_volume"] = announce_volume_override
+        else:
+            announce_volume = await self._async_determine_mass_announce_volume(
+                media_player,
+                player_profile,
+            )
+            if announce_volume is not None:
+                payload["announce_volume"] = announce_volume
 
         _LOGGER.debug(
             "MediaHandler: music_assistant.play_announcement payload for %s url=%s type=%s pre=%s volume=%s",
@@ -825,6 +871,181 @@ class MediaHandler:
                 return normalized
 
         return None
+
+    def _read_volume_from_state(self, media_player: str) -> float | None:
+        """Read current volume from HA state attributes if available."""
+        state = self.hass.states.get(media_player)
+        if not state or not state.attributes:
+            return None
+        for key in ("volume_level", "volume", "announce_volume"):
+            normalized = self._normalize_volume_value(state.attributes.get(key))
+            if normalized is not None:
+                return normalized
+        return None
+
+    async def _async_wake_player(self, media_player: str, register_context: Callable[[Context, str], None] | None) -> bool:
+        """Turn on a media player so it exposes volume attributes."""
+        state = self.hass.states.get(media_player)
+        if state and state.state not in ("off", "standby", "unavailable"):
+            return True
+
+        wake_context = Context()
+        if register_context:
+            register_context(wake_context, "turn_on")
+
+        try:
+            await self.hass.services.async_call(
+                "media_player",
+                "turn_on",
+                {"entity_id": media_player},
+                blocking=True,
+                context=wake_context,
+            )
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.debug("MediaHandler: failed to wake %s for volume snapshot: %s", media_player, err)
+            return False
+
+        for _ in range(10):
+            await asyncio.sleep(0.3)
+            state = self.hass.states.get(media_player)
+            if state and state.state not in ("off", "standby", "unavailable"):
+                return True
+
+        return False
+
+    async def _async_get_player_volume(
+        self,
+        media_player: str,
+        *,
+        player_profile: Dict[str, Any] | None,
+        wake_if_off: bool,
+        register_context: Callable[[Context, str], None] | None,
+    ) -> float | None:
+        """Return best-known normalized volume for a player."""
+        volume = self._read_volume_from_state(media_player)
+        if volume is None and player_profile and player_profile.get("family") == "music_assistant":
+            volume = await self._async_lookup_mass_volume(media_player)
+
+        if volume is None and wake_if_off:
+            woke = await self._async_wake_player(media_player, register_context)
+            if woke:
+                volume = self._read_volume_from_state(media_player)
+                if volume is None and player_profile and player_profile.get("family") == "music_assistant":
+                    volume = await self._async_lookup_mass_volume(media_player)
+        return volume
+
+    async def _async_set_player_volume(
+        self,
+        media_player: str,
+        target_volume: float,
+        register_context: Callable[[Context, str], None] | None,
+        *,
+        restoring: bool = False,
+    ) -> None:
+        """Set the HA media_player volume to the requested level."""
+        try:
+            normalized = max(0.0, min(1.0, float(target_volume)))
+        except (TypeError, ValueError):
+            _LOGGER.debug("MediaHandler: invalid target volume %s for %s", target_volume, media_player)
+            return
+
+        context = Context()
+        if register_context:
+            register_context(context, "volume" if not restoring else "volume_restore")
+
+        try:
+            await self.hass.services.async_call(
+                "media_player",
+                "volume_set",
+                {"entity_id": media_player, "volume_level": normalized},
+                blocking=True,
+                context=context,
+            )
+        except HomeAssistantError as err:
+            _LOGGER.error("MediaHandler: volume_set failed for %s: %s", media_player, err)
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.error("MediaHandler: unexpected error setting volume on %s: %s", media_player, err)
+
+    async def _async_apply_volume_override(
+        self,
+        item_id: str,
+        media_player: str,
+        target_volume: float,
+        player_profile: Dict[str, Any] | None,
+        register_context: Callable[[Context, str], None] | None,
+    ) -> int | None:
+        """Capture current volume, apply override, and return MA announce volume if needed."""
+        stack = self._player_volume_stack.get(media_player)
+        entry = None
+        if stack:
+            for existing in stack:
+                if existing["item_id"] == item_id:
+                    entry = existing
+                    break
+
+        if entry is None:
+            snapshot = await self._async_get_player_volume(
+                media_player,
+                player_profile=player_profile,
+                wake_if_off=True,
+                register_context=register_context,
+            )
+            if snapshot is not None:
+                entry = {"item_id": item_id, "volume": snapshot, "restore_ready": False}
+                self._player_volume_stack.setdefault(media_player, []).append(entry)
+
+        await self._async_set_player_volume(
+            media_player,
+            target_volume,
+            register_context,
+        )
+
+        if player_profile and player_profile.get("family") == "music_assistant":
+            percentage = int(round(max(0.0, min(1.0, target_volume)) * 100))
+            return max(1, min(100, percentage))
+        return None
+
+    async def restore_player_volume(
+        self,
+        item_id: str,
+        media_player: str | None,
+        register_context: Callable[[Context, str], None] | None = None,
+    ) -> None:
+        """Restore a player's original volume when an item stops."""
+        if not media_player:
+            return
+        stack = self._player_volume_stack.get(media_player)
+        if not stack:
+            return
+
+        for entry in stack:
+            if entry["item_id"] == item_id:
+                entry["restore_ready"] = True
+                break
+        else:
+            return
+
+        await self._async_process_volume_stack(media_player, register_context)
+
+    async def _async_process_volume_stack(
+        self,
+        media_player: str,
+        register_context: Callable[[Context, str], None] | None,
+    ) -> None:
+        """Pop and restore stacked volume overrides when possible."""
+        stack = self._player_volume_stack.get(media_player)
+        while stack and stack[-1].get("restore_ready"):
+            entry = stack.pop()
+            volume_value = entry.get("volume")
+            if volume_value is not None:
+                await self._async_set_player_volume(
+                    media_player,
+                    volume_value,
+                    register_context,
+                    restoring=True,
+                )
+        if stack is not None and not stack:
+            self._player_volume_stack.pop(media_player, None)
 
     async def _play_tts_via_service(
         self,
@@ -941,16 +1162,35 @@ class MediaHandler:
         """Send stop command to the media player."""
         if not media_player:
             return
-        try:
-            stop_context = Context()
-            if register_context:
-                register_context(stop_context, "stop")
-            await self.hass.services.async_call(
-                "media_player",
-                "media_stop",
-                {"entity_id": media_player},
-                blocking=True,
-                context=stop_context,
-            )
-        except Exception as err:
-            _LOGGER.error("Error stopping media player %s: %s", media_player, err)
+        profile = self._get_media_player_profile(media_player)
+        family = (profile or {}).get("family")
+        prefer_pause = family == "spotify"
+        stop_context = Context()
+        if register_context:
+            register_context(stop_context, "stop")
+        service_calls: list[str] = []
+        if prefer_pause:
+            service_calls.append("media_pause")
+        service_calls.append("media_stop")
+
+        last_error: Exception | None = None
+        for service in service_calls:
+            try:
+                await self.hass.services.async_call(
+                    "media_player",
+                    service,
+                    {"entity_id": media_player},
+                    blocking=True,
+                    context=stop_context,
+                )
+                return
+            except Exception as err:  # noqa: BLE001
+                last_error = err
+                if service == "media_pause":
+                    _LOGGER.debug(
+                        "MediaHandler: media_pause failed on %s (%s); falling back to media_stop",
+                        media_player,
+                        err,
+                    )
+                    continue
+                _LOGGER.error("Error stopping media player %s using %s: %s", media_player, service, err)

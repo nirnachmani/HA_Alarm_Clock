@@ -104,6 +104,16 @@ set_alarm:
       required: false
       selector:
         entity: {}
+    volume:
+      name: Volume
+      description: Optional playback volume (0-100%). Leave blank to keep the current volume.
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: percent
 
 set_reminder:
   name: Set Reminder
@@ -196,6 +206,16 @@ set_reminder:
       required: false
       selector:
         entity: {}
+    volume:
+      name: Volume
+      description: Optional playback volume (0-100%). Leave blank to keep the current volume.
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: percent
 
 
 stop_alarm:
@@ -410,6 +430,16 @@ edit_alarm:
       required: false
       selector:
         entity: {}
+    volume:
+      name: Volume
+      description: Optional playback volume (0-100%). Leave blank to keep the current volume.
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: percent
 
 
 edit_reminder:
@@ -504,6 +534,16 @@ edit_reminder:
       required: false
       selector:
         entity: {}
+    volume:
+      name: Volume
+      description: Optional playback volume (0-100%). Leave blank to keep the current volume.
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: percent
 
 delete_alarm:
   name: Delete Alarm
@@ -623,6 +663,16 @@ reschedule_alarm:
       required: false
       selector:
         entity: {}
+    volume:
+      name: Volume
+      description: Optional playback volume (0-100%). Leave blank to keep the current volume.
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: percent
 
 
 reschedule_reminder:
@@ -704,4 +754,14 @@ reschedule_reminder:
       required: false
       selector:
         entity: {}
+    volume:
+      name: Volume
+      description: Optional playback volume (0-100%). Leave blank to keep the current volume.
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: percent
 

@@ -154,6 +154,10 @@ class SetReminderTool(llm.Tool):
                 "activation_entity",
                 description="Entity to activate when the reminder fires (must be in allowed list).",
             ): str,
+            vol.Optional(
+                "volume",
+                description="Optional playback volume (0-1 normalized or 0-100%).",
+            ): vol.Any(int, float, str),
         }
     )
 
@@ -200,6 +204,7 @@ class SetReminderTool(llm.Tool):
         announce_time = tool_input.tool_args.get("announce_time")
         notify_device = tool_input.tool_args.get("notify_device")
         activation_entity = tool_input.tool_args.get("activation_entity")
+        volume_value = tool_input.tool_args.get("volume")
 
         _LOGGER.info("Setting reminder '%s' at %s", name, time_str)
 
@@ -275,6 +280,12 @@ class SetReminderTool(llm.Tool):
 
             if activation_entity:
                 service_data["activation_entity"] = activation_entity
+
+            if volume_value is not None:
+                try:
+                    service_data["volume"] = float(volume_value)
+                except (TypeError, ValueError):
+                    return {"error": "Volume must be numeric"}
 
             call = MockServiceCall(service_data)
             target = {}

@@ -44,6 +44,7 @@ from .const import (
     ATTR_NOTIFY_DEVICE,  
     ATTR_NOTIFY_TITLE,      
     ATTR_SPOTIFY_SOURCE,
+    ATTR_VOLUME,
     DEFAULT_SNOOZE_MINUTES,
     DEFAULT_NAME,
     CONF_MEDIA_PLAYER,
@@ -245,6 +246,23 @@ def _validate_repeat_days(value):
         normalized.append(candidate)
     return normalized
 
+
+def _validate_volume(value):
+    """Normalize optional volume input to 0.0-1.0 range."""
+    if value in (None, ""):
+        return None
+    try:
+        number = float(value)
+    except (ValueError, TypeError):
+        raise vol.Invalid("Volume must be numeric") from None
+    if number < 0:
+        number = 0.0
+    if number <= 1:
+        return number
+    if number <= 100:
+        return min(1.0, number / 100.0)
+    return 1.0
+
 ALARM_ID_VALIDATOR = vol.Any(cv.entity_id, cv.string)
 REMINDER_ID_VALIDATOR = vol.Any(cv.entity_id, cv.string)
 
@@ -329,6 +347,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 cv.string,  # Single device
                 vol.All(cv.ensure_list, [cv.string])  # List of devices
             ),
+            vol.Optional(ATTR_VOLUME): _validate_volume,
         })
 
         REMINDER_SERVICE_SCHEMA = vol.Schema({
@@ -352,6 +371,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                  cv.string,  # Single device
                 vol.All(cv.ensure_list, [cv.string])  # List of devices
             ),
+            vol.Optional(ATTR_VOLUME): _validate_volume,
         })
 
         # Store coordinator for future access
@@ -508,6 +528,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 vol.Optional("repeat"): _validate_repeat,
                 vol.Optional("repeat_days"): _validate_repeat_days,
                 vol.Optional(ATTR_SPOTIFY_SOURCE): cv.string,
+                vol.Optional(ATTR_VOLUME): _validate_volume,
             }, extra=vol.ALLOW_EXTRA),
         )
 
@@ -527,6 +548,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 vol.Optional("activation_entity"): _validate_activation_entity,
                 vol.Optional("repeat"): _validate_repeat,
                 vol.Optional("repeat_days"): _validate_repeat_days,
+                vol.Optional(ATTR_VOLUME): _validate_volume,
             }, extra=vol.ALLOW_EXTRA),
         )
 
@@ -701,6 +723,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 vol.Optional("activation_entity"): _validate_activation_entity,
                 vol.Optional("repeat"): _validate_repeat,
                 vol.Optional("repeat_days"): _validate_repeat_days,
+                vol.Optional(ATTR_VOLUME): _validate_volume,
             }, extra=vol.ALLOW_EXTRA),
         )
 
@@ -718,6 +741,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 vol.Optional("activation_entity"): _validate_activation_entity,
                 vol.Optional("repeat"): _validate_repeat,
                 vol.Optional("repeat_days"): _validate_repeat_days,
+                vol.Optional(ATTR_VOLUME): _validate_volume,
             }, extra=vol.ALLOW_EXTRA),
         )
 

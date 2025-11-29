@@ -162,6 +162,10 @@ class SetAlarmTool(llm.Tool):
                 "activation_entity",
                 description="Entity to activate when the alarm fires (must be in allowed list).",
             ): str,
+            vol.Optional(
+                "volume",
+                description="Optional playback volume (0-1 for normalized or 0-100 for percentage).",
+            ): vol.Any(int, float, str),
         }
     )
 
@@ -210,6 +214,7 @@ class SetAlarmTool(llm.Tool):
         announce_name = tool_input.tool_args.get("announce_name")
         notify_device = tool_input.tool_args.get("notify_device")
         activation_entity = tool_input.tool_args.get("activation_entity")
+        volume_value = tool_input.tool_args.get("volume")
 
         _LOGGER.info("Setting alarm at %s with name: %s", time_str, name)
 
@@ -293,6 +298,12 @@ class SetAlarmTool(llm.Tool):
 
             if activation_entity:
                 service_data["activation_entity"] = activation_entity
+
+            if volume_value is not None:
+                try:
+                    service_data["volume"] = float(volume_value)
+                except (TypeError, ValueError):
+                    return {"error": "Volume must be numeric"}
 
             call = MockServiceCall(service_data)
             target = {}
