@@ -64,7 +64,7 @@ All options are optional
 - The companion cards display, create, edit, delete, snooze, stop and enable/disable alarms and reminders
 - Built-in HA Media Browser dialogs let you choose tracks from media sources like local media, Music Assistant, DLNA, SpotifyPlus, Plex, Jellyfin. The companion cards also offer local on-device search (very slow) and Music Assistant and SpotifyPlus search to find media quickly.
 - ability to sample media from the card (if supported)
-- Companion cards repository link (installation instructions TBD): <cards-repo-link>.
+- Companion cards repository link: [<cards-repo-link>.](https://github.com/nirnachmani/HA-Alarm-Clock-Cards)
 
 ## Debugging
 
@@ -84,6 +84,7 @@ Reproduce the issue, collect `home-assistant.log` and raise an issue. I will try
 Based on [HA-Alarms-and-Reminders][upstream] by @omaramin-2000 and modified by vibe coding .
 
 [upstream]: https://github.com/omaramin-2000/HA-Alarms-and-Reminders
+
 
 
 
