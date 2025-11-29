@@ -1,20 +1,20 @@
 # HA Alarm Clock
 
-A centralised alarm clock and reminder integration for Home Assistant which plays alarms and reminders on media players with HA Media Browser support for selecting media, and companion cards. It builds on [HA-Alarms-and-Reminders][upstream] (thank you!), with changes via vibe coding.
+A centralised alarm clock and reminder integration for Home Assistant which plays alarms and reminders on media players, with HA Media Browser support for selecting media and companion cards. It builds on [HA-Alarms-and-Reminders][upstream] (thank you!), with changes via vibe coding.
 
 ## Overview
 
-- Only supports Media players: there is no separate satellite announce channel, but satellites can still be targeted as regular media players (this was done due to issues related to recognising user interruptions to stop alarms and reminders when using announce).
-- Alarms and reminders repeat in a loop until stopped; stopping playback on the target player ("Hey Google, stop" or pressing the hardware button/satellite control) stops the alarm to imitate more traditional alarm clock feel
-- Announcement sequence is configurable per-item: loop announce time -> announce name -> announce message -> media playback, with each announcement optionally disabled.
-- Entities (lights, switches, script, etc.) can be turned on when an alarm or reminder fires; available entities are configured in the integration so only approved entities appear in the UI.
+- Alarms and reminders repeat in a loop until stopped; stopping playback on the target player (“Hey Google, stop” or pressing the hardware button/satellite control) stops the alarm to imitate a traditional alarm clock feel (in addition to the ability to stop alarm and reminders via service calls, voice and companion cards).
+- Playback sequence is configurable per-item: loop announce time → announce name → announce message → media playback; all announcements are optional
 - HA Media Browser support for media file selection, supports multiple sources: local media, Music Assistant, DLNA, SpotifyPlus, Plex, Jellyfin, Radio Browser
 - Pair it with the [Noise Generator](https://github.com/nirnachmani/noise-generator) for more traditional alarm playback.
 - Tested media players include Google Cast devices, Home Assistant Voice preview, Music Assistant media players, Spotify media players, and SpotifyPlus players; others may behave differently, especially around looping and stop detection.
-- Switch entities per item plus a dashboard sensor expose the entire schedule for dashboards and automations.
+- Entities (alarm/reminder and a switch) per item plus a dashboard sensor that exposes the entire schedule for automations.
 - Services exist for creating, editing, rescheduling, snoozing, stopping, deleting, and stop-all actions, along with metadata helpers for the UI and HA Assist/LLM intents for voice/AI control.
 - Repeat patterns cover one-off, daily, weekdays, weekends, or a custom list of days, and can be edited after creation.
+- Override volume can be set for each item
 - Snoozing is available per alarm/reminder via services, the companion cards or assist, and you can set a global default snooze duration in the options flow.
+- Entities (lights, switches, script, etc.) can be turned on when an alarm or reminder fires; available entities are configured in the integration so only approved entities appear in the UI.
 - Companion cards for alarms and reminders to display, add, edit, control and delete alarms and reminders including support for media browsing and searching and media sampling  
 
 ## Limitations
@@ -41,13 +41,18 @@ A centralised alarm clock and reminder integration for Home Assistant which play
 
 (Optional) Install the companion Lovelace cards for alarms and reminders (placeholder link: <cards-repo-link>). They give you full UI control, browsing, and media search.
 
+### Media files
+
+- Download the media files and place them under /media/Alarms (not under /config/media but under the root folder [in HAOS]) - this will make them available in HA under /media/local/Alarms
+- See https://www.home-assistant.io/integrations/media_source/ for further information  
+
 ## Configuration (Settings → Devices & services → HA Alarm Clock → Gear icon)
 
 All options are optional 
 
-- **alarm_sound**: path for default media to play for alarms
-- **reminder_sound**: path for default media to play for reminder
-- **media_player**: default media player 
+- **alarm_sound**: path for default media to play for alarms; defaults to `/media/local/Alarms/birds.mp3` 
+- **reminder_sound**: path for default media to play for reminder; defaults to `/media/local/Alarms/ringtone.mp3` 
+- **media_player**: default media playe
 - **allowed_activation_entities**: allow-list of entities that can be toggled when an alarm triggers; alarms and reminders can only toggle an entity from that list.
 - **enable_llm**: to enable LLM support
 - **default_snooze_minutes**: controls the duration of the snooze action, integration-wide (not configurable per item)
@@ -84,6 +89,7 @@ Reproduce the issue, collect `home-assistant.log` and raise an issue. I will try
 Based on [HA-Alarms-and-Reminders][upstream] by @omaramin-2000 and modified by vibe coding .
 
 [upstream]: https://github.com/omaramin-2000/HA-Alarms-and-Reminders
+
 
 
 
