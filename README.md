@@ -29,7 +29,7 @@ A centralised alarm clock and reminder integration for Home Assistant which play
 ## Installation
 
 ### HACS (recommended)
-1. Open **HACS → Integrations → ⋮ → Custom repositories**.
+1. Open **HACS → ⋮ → Custom repositories**.
 2. Add `https://github.com/nirnachmani/HA-Alarm-Clock` and choose **Integration**.
 3. Search and download “HA Alarm Clock” and restart Home Assistant.
 4. Go to **Settings → Devices & Services → Add Integration**, search for **HA Alarm Clock** and install.
@@ -84,5 +84,6 @@ Reproduce the issue, collect `home-assistant.log` and raise an issue. I will try
 Based on [HA-Alarms-and-Reminders][upstream] by @omaramin-2000 and modified by vibe coding .
 
 [upstream]: https://github.com/omaramin-2000/HA-Alarms-and-Reminders
+
 
 
